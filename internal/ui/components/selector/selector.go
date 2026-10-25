@@ -4,15 +4,14 @@ import (
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
-	"github.com/secfault-org/hacktober/internal/ui/keymap"
 	"github.com/secfault-org/hacktober/internal/ui/styles"
 )
 
 type Selector struct {
 	*list.Model
-	screen styles.Themed
-	keyMap *keymap.KeyMap
-	active int
+	screen    styles.Themed
+	selectKey key.Binding
+	active    int
 }
 
 type IdentifiableItem interface {
@@ -26,7 +25,7 @@ type ItemDelegate interface {
 
 type SelectMsg struct{ IdentifiableItem }
 
-func New(scr styles.Themed, keyMap *keymap.KeyMap, items []IdentifiableItem, delegate ItemDelegate) *Selector {
+func New(scr styles.Themed, selectKey key.Binding, items []IdentifiableItem, delegate ItemDelegate) *Selector {
 	listItems := make([]list.Item, len(items))
 
 	for i, items := range items {
@@ -36,9 +35,9 @@ func New(scr styles.Themed, keyMap *keymap.KeyMap, items []IdentifiableItem, del
 	listModel.Styles.NoItems = scr.Theme().NoContent
 
 	return &Selector{
-		Model:  &listModel,
-		screen: scr,
-		keyMap: keyMap,
+		Model:     &listModel,
+		screen:    scr,
+		selectKey: selectKey,
 	}
 }
 
@@ -63,7 +62,7 @@ func (s *Selector) Update(msg tea.Msg) (*Selector, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, s.keyMap.Select):
+		case key.Matches(msg, s.selectKey):
 			cmds = append(cmds, s.SelectItemCmd)
 		}
 	}

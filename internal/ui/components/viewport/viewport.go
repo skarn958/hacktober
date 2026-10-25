@@ -4,22 +4,21 @@ import (
 	"charm.land/bubbles/v2/key"
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
-	"github.com/secfault-org/hacktober/internal/ui/keymap"
 )
 
 type Viewport struct {
 	*viewport.Model
 
-	keyMap *keymap.KeyMap
+	top, bottom key.Binding
 }
 
-// New returns a new Viewport.
-func New(keyMap *keymap.KeyMap) *Viewport {
+func New(top, bottom key.Binding) *Viewport {
 	vp := viewport.New()
 	vp.MouseWheelEnabled = true
 	return &Viewport{
 		Model:  &vp,
-		keyMap: keyMap,
+		top:    top,
+		bottom: bottom,
 	}
 }
 
@@ -36,9 +35,9 @@ func (v *Viewport) Update(msg tea.Msg) (*Viewport, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, v.keyMap.GotoTop):
+		case key.Matches(msg, v.top):
 			v.GotoTop()
-		case key.Matches(msg, v.keyMap.GotoBottom):
+		case key.Matches(msg, v.bottom):
 			v.GotoBottom()
 		}
 	}

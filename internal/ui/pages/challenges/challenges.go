@@ -6,22 +6,22 @@ import (
 	"github.com/secfault-org/hacktober/internal/model/challenge"
 	"github.com/secfault-org/hacktober/internal/ui/common"
 	"github.com/secfault-org/hacktober/internal/ui/components/selector"
-	"github.com/secfault-org/hacktober/internal/ui/keymap"
 	"github.com/secfault-org/hacktober/internal/ui/styles"
 )
 
 type ChallengesPage struct {
 	screen     styles.Themed
-	keyMap     *keymap.KeyMap
+	keyMap     KeyMap
 	challenges []challenge.Challenge
 	selector   *selector.Selector
 }
 
-func New(scr styles.Themed, keyMap *keymap.KeyMap, challs []challenge.Challenge) *ChallengesPage {
+func New(scr styles.Themed, challs []challenge.Challenge) *ChallengesPage {
+	km := defaultKeyMap()
 
 	list := selector.New(
 		scr,
-		keyMap,
+		km.Select,
 		[]selector.IdentifiableItem{},
 		NewItemDelegate(scr),
 	)
@@ -34,7 +34,7 @@ func New(scr styles.Themed, keyMap *keymap.KeyMap, challs []challenge.Challenge)
 
 	return &ChallengesPage{
 		challenges: challs,
-		keyMap:     keyMap,
+		keyMap:     km,
 		selector:   list,
 	}
 }

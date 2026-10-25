@@ -11,25 +11,26 @@ import (
 	"github.com/secfault-org/hacktober/internal/ui/commands"
 	"github.com/secfault-org/hacktober/internal/ui/common"
 	"github.com/secfault-org/hacktober/internal/ui/components/viewport"
-	"github.com/secfault-org/hacktober/internal/ui/keymap"
 	"github.com/secfault-org/hacktober/internal/ui/styles"
 )
 
 type ChallengeDetailPage struct {
 	width, height     int
 	screen            styles.Themed
-	keyMap            *keymap.KeyMap
+	keyMap            KeyMap
 	viewport          *viewport.Viewport
 	selectedChallenge *challenge.Challenge
 	session           *session.Session
 	ctx               context.Context
 }
 
-func New(scr styles.Themed, keyMap *keymap.KeyMap, session *session.Session, ctx context.Context) *ChallengeDetailPage {
+func New(scr styles.Themed, session *session.Session, ctx context.Context) *ChallengeDetailPage {
+	km := defaultKeyMap()
+
 	page := &ChallengeDetailPage{
 		screen:   scr,
-		keyMap:   keyMap,
-		viewport: viewport.New(keyMap),
+		keyMap:   km,
+		viewport: viewport.New(km.Top, km.Bottom),
 		session:  session,
 		ctx:      ctx,
 	}
@@ -72,9 +73,7 @@ func (c *ChallengeDetailPage) Update(msg tea.Msg) (common.Page, tea.Cmd) {
 		)
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, c.keyMap.Back):
-			cmds = append(cmds, goBackCmd)
-		case key.Matches(msg, c.keyMap.SpawnContainer) && c.session.CanStartChallenge():
+		case key.Matches(msg, c.keyMap.Spawn) && c.session.CanStartChallenge():
 			cmds = append(cmds, commands.StartChallenge(c.session, c.selectedChallenge))
 		}
 	case tea.WindowSizeMsg:
@@ -109,14 +108,10 @@ func (c *ChallengeDetailPage) SetSize(width, height int) {
 
 func (c *ChallengeDetailPage) commonHelp() []key.Binding {
 	b := make([]key.Binding, 0)
-	back := c.keyMap.Back
-	back.SetHelp("esc", "back to challenge list")
 	if c.session.CanStartChallenge() {
-		b = append(b, c.keyMap.SpawnContainer)
+		b = append(b, c.keyMap.Spawn)
 	}
-	b = append(b,
-		back,
-	)
+
 	return b
 }
 
@@ -128,8 +123,4 @@ func (c *ChallengeDetailPage) FullHelp() [][]key.Binding {
 	b := make([][]key.Binding, 0)
 	b = append(b, c.commonHelp())
 	return b
-}
-
-func goBackCmd() tea.Msg {
-	return commands.GoBackMsg{}
 }

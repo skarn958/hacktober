@@ -32,7 +32,7 @@ type Ui struct {
 	ctx          context.Context
 	app          *application.App
 	session      *session.Session
-	keyMap       *keymap.KeyMap
+	global       keymap.GlobalKeyMap
 	screen       *screen.Screen
 	pages        []common.Page
 	activePage   page
@@ -44,7 +44,7 @@ type Ui struct {
 
 func New(ctx context.Context, a *application.App, sess *session.Session, w, h int) *Ui {
 	scr := screen.New(w, h)
-	keyMap := keymap.DefaultKeyMap()
+	global := keymap.DefaultGlobalKeyMap()
 
 	timeout := time.Duration(a.Config().Container.TimeoutInMinutes) * time.Minute
 
@@ -53,7 +53,7 @@ func New(ctx context.Context, a *application.App, sess *session.Session, w, h in
 		app:          a,
 		session:      sess,
 		screen:       scr,
-		keyMap:       keyMap,
+		global:       global,
 		pages:        make([]common.Page, 2),
 		activePage:   challengesPage,
 		showConfetti: false,
@@ -89,8 +89,8 @@ func (ui *Ui) Init() tea.Cmd {
 		return common.ErrorCmd(err)
 	}
 
-	ui.pages[challengesPage] = challenges.New(ui.screen, ui.keyMap, challs)
-	ui.pages[challengeDetailsPage] = challenge_detail.New(ui.screen, ui.keyMap, ui.session, ui.ctx)
+	ui.pages[challengesPage] = challenges.New(ui.screen, challs)
+	ui.pages[challengeDetailsPage] = challenge_detail.New(ui.screen, ui.session, ui.ctx)
 	cmds := make([]tea.Cmd, 0)
 	cmds = append(cmds,
 		ui.pages[challengesPage].Init(),
@@ -126,21 +126,21 @@ func (ui *Ui) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if !ui.inputFocused {
 			switch {
-			case key.Matches(msg, ui.keyMap.EnterFlag) && ui.session.IsChallengeRunning():
+			case key.Matches(msg, ui.global.EnterFlag) && ui.session.IsChallengeRunning():
 				ui.inputFocused = true
 				cmds = append(cmds, commands.EnteringFlagCmd)
-			case key.Matches(msg, ui.keyMap.Quit):
+			case key.Matches(msg, ui.global.Quit):
 				return ui, tea.Quit
-			case ui.activePage == challengeDetailsPage && key.Matches(msg, ui.keyMap.Back):
-				ui.activePage = challengesPage
-			case key.Matches(msg, ui.keyMap.Help):
+			case key.Matches(msg, ui.global.Back) && ui.canGoBack():
+				ui.goBack()
+			case key.Matches(msg, ui.global.Help):
 				cmds = append(cmds, footer.ToggleHelpCmd)
-			case key.Matches(msg, ui.keyMap.StopContainer):
+			case key.Matches(msg, ui.global.StopContainer):
 				cmds = append(cmds, commands.StopChallenge(ui.session, ui.ctx))
 			}
 		} else {
 			switch {
-			case key.Matches(msg, ui.keyMap.Back):
+			case key.Matches(msg, ui.global.Back):
 				ui.inputFocused = false
 				cmds = append(cmds, commands.EnteringFlagCanceled)
 			}
@@ -247,14 +247,20 @@ func (ui *Ui) selectChallengeCmd(challenge *challenge.Challenge) tea.Cmd {
 	}
 }
 
+func (ui *Ui) canGoBack() bool { return ui.activePage != challengesPage }
+func (ui *Ui) goBack()         { ui.activePage = challengesPage }
+
 func (ui *Ui) ShortHelp() []key.Binding {
 	bindings := make([]key.Binding, 0)
 
 	bindings = append(bindings, ui.pages[ui.activePage].ShortHelp()...)
 	if ui.session.CanStopChallenge() {
-		bindings = append(bindings, ui.keyMap.StopContainer, ui.keyMap.EnterFlag)
+		bindings = append(bindings, ui.global.StopContainer, ui.global.EnterFlag)
 	}
-	bindings = append(bindings, ui.keyMap.Help, ui.keyMap.Quit)
+	if ui.canGoBack() {
+		bindings = append(bindings, ui.global.Back)
+	}
+	bindings = append(bindings, ui.global.Help, ui.global.Quit)
 
 	return bindings
 }
@@ -264,12 +270,15 @@ func (ui *Ui) FullHelp() [][]key.Binding {
 
 	bindings = append(bindings, ui.pages[ui.activePage].FullHelp()...)
 	if ui.session.CanStopChallenge() {
-		bindings = append(bindings, []key.Binding{ui.keyMap.StopContainer}, []key.Binding{ui.keyMap.EnterFlag})
+		bindings = append(bindings, []key.Binding{ui.global.StopContainer}, []key.Binding{ui.global.EnterFlag})
+	}
+	if ui.canGoBack() {
+		bindings = append(bindings, []key.Binding{ui.global.Back})
 	}
 	bindings = append(bindings,
 		[]key.Binding{
-			ui.keyMap.Help,
-			ui.keyMap.Quit,
+			ui.global.Help,
+			ui.global.Quit,
 		},
 	)
 
