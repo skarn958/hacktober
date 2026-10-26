@@ -8,9 +8,6 @@ import (
 	"github.com/secfault-org/hacktober/internal/session"
 )
 
-type SelectChallengeMsg *challenge.Challenge
-type GoBackMsg struct{}
-
 type ChallengeStaringMsg *challenge.Challenge
 type ChallengeStartedMsg *challenge.ActiveChallenge
 type ChallengeStoppingMsg *challenge.ActiveChallenge

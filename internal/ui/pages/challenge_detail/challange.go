@@ -24,53 +24,42 @@ type ChallengeDetailPage struct {
 	ctx               context.Context
 }
 
-func New(scr styles.Themed, session *session.Session, ctx context.Context) *ChallengeDetailPage {
+func New(scr styles.Themed, session *session.Session, ctx context.Context, chall *challenge.Challenge) *ChallengeDetailPage {
 	km := defaultKeyMap()
 
 	page := &ChallengeDetailPage{
-		screen:   scr,
-		keyMap:   km,
-		viewport: viewport.New(km.Top, km.Bottom),
-		session:  session,
-		ctx:      ctx,
+		screen:            scr,
+		keyMap:            km,
+		viewport:          viewport.New(km.Top, km.Bottom),
+		selectedChallenge: chall,
+		session:           session,
+		ctx:               ctx,
 	}
 	return page
 }
 
 func (c *ChallengeDetailPage) Init() tea.Cmd {
-	if c.selectedChallenge == nil {
-		c.viewport.Model.SetContent("Loading...")
-		return nil
-	} else {
-		width := c.width
-		if width > 120 {
-			width = 120
-		}
+	width := min(c.width, 120)
 
-		r, err := glamour.NewTermRenderer(
-			glamour.WithStylePath("tokyo-night"),
-			glamour.WithWordWrap(width),
-		)
-		if err != nil {
-			return nil
-		}
-		rendered, err := r.Render(c.selectedChallenge.ChallengeMarkdown)
-		if err != nil {
-			return nil
-		}
-		c.viewport.Model.SetContent(rendered)
+	r, err := glamour.NewTermRenderer(
+		glamour.WithStylePath("tokyo-night"),
+		glamour.WithWordWrap(width),
+	)
+	if err != nil {
+		return nil
 	}
+	rendered, err := r.Render(c.selectedChallenge.ChallengeMarkdown)
+	if err != nil {
+		return nil
+	}
+	c.viewport.Model.SetContent(rendered)
+
 	return nil
 }
 
 func (c *ChallengeDetailPage) Update(msg tea.Msg) (common.Page, tea.Cmd) {
 	cmds := make([]tea.Cmd, 0)
 	switch msg := msg.(type) {
-	case commands.SelectChallengeMsg:
-		c.selectedChallenge = msg
-		cmds = append(cmds,
-			c.Init(),
-		)
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, c.keyMap.Spawn) && c.session.CanStartChallenge():

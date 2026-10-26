@@ -8,7 +8,6 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/secfault-org/hacktober/internal/application"
-	"github.com/secfault-org/hacktober/internal/model/challenge"
 	"github.com/secfault-org/hacktober/internal/session"
 	"github.com/secfault-org/hacktober/internal/ui/commands"
 	"github.com/secfault-org/hacktober/internal/ui/common"
@@ -21,21 +20,13 @@ import (
 	"github.com/secfault-org/hacktober/internal/ui/screen"
 )
 
-type page int
-
-const (
-	challengesPage page = iota
-	challengeDetailsPage
-)
-
 type Ui struct {
 	ctx          context.Context
 	app          *application.App
 	session      *session.Session
 	global       keymap.GlobalKeyMap
 	screen       *screen.Screen
-	pages        []common.Page
-	activePage   page
+	navStack     []common.Page
 	footer       *footer.Footer
 	confetti     confetti.Model
 	showConfetti bool
@@ -54,8 +45,7 @@ func New(ctx context.Context, a *application.App, sess *session.Session, w, h in
 		session:      sess,
 		screen:       scr,
 		global:       global,
-		pages:        make([]common.Page, 2),
-		activePage:   challengesPage,
+		navStack:     nil,
 		showConfetti: false,
 		confetti:     confetti.InitialModel(scr),
 	}
@@ -68,17 +58,13 @@ func (ui *Ui) SetSize(width, height int) {
 }
 
 func (ui *Ui) layout() {
-	appStyle := ui.screen.Theme().App
-	usableWidth := ui.screen.Width - appStyle.GetHorizontalFrameSize()
-	usableHeight := ui.screen.Height - appStyle.GetVerticalFrameSize()
+	w, _ := ui.usableSize()
+	ui.footer.SetWidth(w)
 
-	ui.footer.SetWidth(usableWidth)
-	mainHeight := usableHeight - ui.footer.Height()
-
-	for _, page := range ui.pages {
-		if page != nil {
-			page.SetSize(usableWidth, mainHeight)
-		}
+	// a lower footer width can influence the height so we have to calc it again
+	_, h := ui.usableSize()
+	for _, page := range ui.navStack {
+		page.SetSize(w, h)
 	}
 }
 
@@ -89,18 +75,12 @@ func (ui *Ui) Init() tea.Cmd {
 		return common.ErrorCmd(err)
 	}
 
-	ui.pages[challengesPage] = challenges.New(ui.screen, challs)
-	ui.pages[challengeDetailsPage] = challenge_detail.New(ui.screen, ui.session, ui.ctx)
-	cmds := make([]tea.Cmd, 0)
-	cmds = append(cmds,
-		ui.pages[challengesPage].Init(),
-		ui.pages[challengeDetailsPage].Init(),
-		ui.confetti.Init(),
-	)
-
 	ui.layout()
 
-	return tea.Batch(cmds...)
+	return tea.Batch(
+		ui.navPush(challenges.New(ui.screen, challs)),
+		ui.confetti.Init(),
+	)
 }
 
 func (ui *Ui) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -132,7 +112,7 @@ func (ui *Ui) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case key.Matches(msg, ui.global.Quit):
 				return ui, tea.Quit
 			case key.Matches(msg, ui.global.Back) && ui.canGoBack():
-				ui.goBack()
+				ui.navPop()
 			case key.Matches(msg, ui.global.Help):
 				cmds = append(cmds, footer.ToggleHelpCmd)
 			case key.Matches(msg, ui.global.StopContainer):
@@ -146,15 +126,13 @@ func (ui *Ui) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case selector.SelectMsg:
-		switch msg.IdentifiableItem.(type) {
-		case challenges.Item:
-			chall := msg.IdentifiableItem.(challenges.Item).Challenge
-			if !chall.Locked() {
-				cmds = append(cmds, ui.selectChallengeCmd(chall))
+		if item, ok := msg.IdentifiableItem.(challenges.Item); ok {
+			if chall := item.Challenge; !chall.Locked() {
+				cmds = append(cmds, ui.navPush(
+					challenge_detail.New(ui.screen, ui.session, ui.ctx, chall),
+				))
 			}
 		}
-	case commands.SelectChallengeMsg:
-		ui.activePage = challengeDetailsPage
 	case commands.ChallengeStaringMsg:
 		cmds = append(cmds, commands.SpawnContainer(ui.session, ui.ctx, msg))
 	case commands.ChallengeStartedMsg:
@@ -182,8 +160,8 @@ func (ui *Ui) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	if !ui.inputFocused {
-		m, cmd := ui.pages[ui.activePage].Update(msg)
-		ui.pages[ui.activePage] = m.(common.Page)
+		m, cmd := ui.currentPage().Update(msg)
+		ui.navStack[len(ui.navStack)-1] = m
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
@@ -225,7 +203,7 @@ func (ui *Ui) content() string {
 	mainView := lipgloss.NewStyle().
 		Height(mainHeight).
 		MaxHeight(mainHeight).
-		Render(ui.pages[ui.activePage].View())
+		Render(ui.currentPage().View())
 
 	view := lipgloss.JoinVertical(lipgloss.Left,
 		mainView,
@@ -241,19 +219,36 @@ func (ui *Ui) View() tea.View {
 	return view
 }
 
-func (ui *Ui) selectChallengeCmd(challenge *challenge.Challenge) tea.Cmd {
-	return func() tea.Msg {
-		return commands.SelectChallengeMsg(challenge)
+func (ui *Ui) usableSize() (int, int) {
+	appStyle := ui.screen.Theme().App
+	w := ui.screen.Width - appStyle.GetHorizontalFrameSize()
+	h := ui.screen.Height - appStyle.GetVerticalFrameSize() - ui.footer.Height()
+	return w, h
+}
+
+func (ui *Ui) currentPage() common.Page {
+	return ui.navStack[len(ui.navStack)-1]
+}
+
+func (ui *Ui) navPush(p common.Page) tea.Cmd {
+	w, h := ui.usableSize()
+	p.SetSize(w, h)
+	ui.navStack = append(ui.navStack, p)
+	return p.Init()
+}
+
+func (ui *Ui) navPop() {
+	if ui.canGoBack() {
+		ui.navStack = ui.navStack[:len(ui.navStack)-1]
 	}
 }
 
-func (ui *Ui) canGoBack() bool { return ui.activePage != challengesPage }
-func (ui *Ui) goBack()         { ui.activePage = challengesPage }
+func (ui *Ui) canGoBack() bool { return len(ui.navStack) > 1 }
 
 func (ui *Ui) ShortHelp() []key.Binding {
 	bindings := make([]key.Binding, 0)
 
-	bindings = append(bindings, ui.pages[ui.activePage].ShortHelp()...)
+	bindings = append(bindings, ui.currentPage().ShortHelp()...)
 	if ui.session.CanStopChallenge() {
 		bindings = append(bindings, ui.global.StopContainer, ui.global.EnterFlag)
 	}
@@ -268,7 +263,7 @@ func (ui *Ui) ShortHelp() []key.Binding {
 func (ui *Ui) FullHelp() [][]key.Binding {
 	bindings := make([][]key.Binding, 0)
 
-	bindings = append(bindings, ui.pages[ui.activePage].FullHelp()...)
+	bindings = append(bindings, ui.currentPage().FullHelp()...)
 	if ui.session.CanStopChallenge() {
 		bindings = append(bindings, []key.Binding{ui.global.StopContainer}, []key.Binding{ui.global.EnterFlag})
 	}
