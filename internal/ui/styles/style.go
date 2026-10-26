@@ -1,6 +1,8 @@
 package styles
 
-import "charm.land/lipgloss/v2"
+import (
+	"charm.land/lipgloss/v2"
+)
 
 type Themed interface {
 	Theme() *Styles
@@ -10,6 +12,7 @@ type Styles struct {
 	NoContent lipgloss.Style
 
 	App                        lipgloss.Style
+	ListPage                   lipgloss.Style
 	ChallengeListItemContainer lipgloss.Style
 
 	ChallengeListItem struct {
@@ -53,6 +56,9 @@ func DefaultStyles() *Styles {
 
 	style.App = lipgloss.NewStyle().
 		Margin(0, 0)
+
+	style.ListPage = lipgloss.NewStyle().
+		Margin(1, 1)
 
 	style.NoContent = lipgloss.NewStyle().
 		MarginTop(1).
