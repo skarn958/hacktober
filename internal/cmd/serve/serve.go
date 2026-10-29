@@ -37,7 +37,7 @@ var (
 				return err
 			}
 
-			repo := repository.NewRepository(ctx, cfg.Challenge.BaseDir)
+			repo := repository.NewRepository(ctx, cfg)
 
 			app := application.NewApp(cfg, repo, containerService, logger)
 

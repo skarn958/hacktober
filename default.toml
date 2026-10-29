@@ -9,4 +9,14 @@ ContainerPort = 1337
 TimeoutInMinutes = 30
 
 [challenge]
-BaseDir = "challenges/2024"
+BaseDir = "challenges"
+
+[[tracks]]
+Id = "PWN101"
+Title = "PWN 101"
+Description = "Introduction to binary exploitation (stack-based buffer overflows, format-string attacks, ...)"
+
+[[tracks]]
+Id = "WEB101"
+Title = "WEB 101"
+Description = "This track will be filled by Mr. B. 🧑‍💻"

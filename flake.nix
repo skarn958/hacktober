@@ -37,7 +37,11 @@
             TimeoutInMinutes = 30;
             RegistryPrefix = "10.0.0.1:5000";
         };
-        challenge.BaseDir = "${challengeData}/2024";
+        challenge.BaseDir = "${challengeData}";
+        tracks = [
+            { Id = "PWN101"; Title = "PWN 101"; Description = "Introduction to binary exploitation (stack-based buffer overflows, format-string attacks, ...)"; }
+            { Id = "WEB101"; Title = "WEB 101"; Description = "This track will be filled by Mr. B. 🧑‍💻"; }
+        ];
     };
 
     hostKey = pkgs.writeShellScript "hacktober-hostkey" ''

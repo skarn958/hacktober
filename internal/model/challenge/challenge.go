@@ -12,6 +12,7 @@ type Challenge struct {
 	ReleaseDate       time.Time
 	ContainerImage    string
 	ChallengeFile     string
+	Track             string
 }
 
 func (c Challenge) Locked() bool {

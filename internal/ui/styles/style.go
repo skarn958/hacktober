@@ -11,8 +11,26 @@ type Themed interface {
 type Styles struct {
 	NoContent lipgloss.Style
 
-	App                        lipgloss.Style
-	ListPage                   lipgloss.Style
+	App      lipgloss.Style
+	ListPage lipgloss.Style
+
+	TrackListItemContainer lipgloss.Style
+
+	TrackListItem struct {
+		Normal struct {
+			Base  lipgloss.Style
+			Title lipgloss.Style
+			Desc  lipgloss.Style
+			Count lipgloss.Style
+		}
+		Active struct {
+			Base  lipgloss.Style
+			Title lipgloss.Style
+			Desc  lipgloss.Style
+			Count lipgloss.Style
+		}
+	}
+
 	ChallengeListItemContainer lipgloss.Style
 
 	ChallengeListItem struct {
@@ -64,6 +82,37 @@ func DefaultStyles() *Styles {
 		MarginTop(1).
 		MarginLeft(2).
 		Foreground(lipgloss.Color("242"))
+
+	style.TrackListItemContainer = lipgloss.NewStyle().
+		PaddingLeft(1).
+		Border(lipgloss.Border{Left: " "}, false, false, false, true).
+		Height(2)
+
+	style.TrackListItem.Normal.Base = lipgloss.NewStyle().
+		PaddingLeft(1).
+		Border(lipgloss.Border{Left: " "}, false, false, false, true).
+		Height(2)
+
+	style.TrackListItem.Normal.Title = lipgloss.NewStyle().Bold(true)
+
+	style.TrackListItem.Normal.Desc = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("243"))
+
+	style.TrackListItem.Normal.Count = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("243"))
+
+	style.TrackListItem.Active.Base = style.TrackListItem.Normal.Base.
+		BorderStyle(lipgloss.Border{Left: "┃"}).
+		BorderForeground(lipgloss.Color("176"))
+
+	style.TrackListItem.Active.Title = style.TrackListItem.Normal.Title.
+		Foreground(lipgloss.Color("212"))
+
+	style.TrackListItem.Active.Desc = style.TrackListItem.Normal.Desc.
+		Foreground(lipgloss.Color("246"))
+
+	style.TrackListItem.Active.Count = style.TrackListItem.Normal.Count.
+		Foreground(lipgloss.Color("212"))
 
 	style.ChallengeListItemContainer = lipgloss.NewStyle().
 		PaddingLeft(1).

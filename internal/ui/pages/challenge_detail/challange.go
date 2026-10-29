@@ -1,8 +1,6 @@
 package challenge_detail
 
 import (
-	"context"
-
 	"charm.land/bubbles/v2/key"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/glamour/v2"
@@ -21,10 +19,9 @@ type ChallengeDetailPage struct {
 	viewport          *viewport.Viewport
 	selectedChallenge *challenge.Challenge
 	session           *session.Session
-	ctx               context.Context
 }
 
-func New(scr styles.Themed, session *session.Session, ctx context.Context, chall *challenge.Challenge) *ChallengeDetailPage {
+func New(scr styles.Themed, session *session.Session, chall *challenge.Challenge) *ChallengeDetailPage {
 	km := defaultKeyMap()
 
 	page := &ChallengeDetailPage{
@@ -33,7 +30,6 @@ func New(scr styles.Themed, session *session.Session, ctx context.Context, chall
 		viewport:          viewport.New(km.Top, km.Bottom),
 		selectedChallenge: chall,
 		session:           session,
-		ctx:               ctx,
 	}
 	return page
 }

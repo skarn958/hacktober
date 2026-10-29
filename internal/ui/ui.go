@@ -13,10 +13,8 @@ import (
 	"github.com/secfault-org/hacktober/internal/ui/common"
 	"github.com/secfault-org/hacktober/internal/ui/components/confetti"
 	"github.com/secfault-org/hacktober/internal/ui/components/footer"
-	"github.com/secfault-org/hacktober/internal/ui/components/selector"
 	"github.com/secfault-org/hacktober/internal/ui/keymap"
-	"github.com/secfault-org/hacktober/internal/ui/pages/challenge_detail"
-	"github.com/secfault-org/hacktober/internal/ui/pages/challenges"
+	"github.com/secfault-org/hacktober/internal/ui/pages/tracks"
 	"github.com/secfault-org/hacktober/internal/ui/screen"
 )
 
@@ -69,7 +67,7 @@ func (ui *Ui) layout() {
 }
 
 func (ui *Ui) Init() tea.Cmd {
-	challs, err := ui.app.Repo().GetAllChallenges(ui.ctx)
+	allTracks, err := ui.app.Repo().GetAllTracks(ui.ctx)
 
 	if err != nil {
 		return common.ErrorCmd(err)
@@ -78,7 +76,7 @@ func (ui *Ui) Init() tea.Cmd {
 	ui.layout()
 
 	return tea.Batch(
-		ui.navPush(challenges.New(ui.screen, challs)),
+		ui.navPush(tracks.New(ui.screen, ui.session, allTracks)),
 		ui.confetti.Init(),
 	)
 }
@@ -125,14 +123,8 @@ func (ui *Ui) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				cmds = append(cmds, commands.EnteringFlagCanceled)
 			}
 		}
-	case selector.SelectMsg:
-		if item, ok := msg.IdentifiableItem.(challenges.Item); ok {
-			if chall := item.Challenge; !chall.Locked() {
-				cmds = append(cmds, ui.navPush(
-					challenge_detail.New(ui.screen, ui.session, ui.ctx, chall),
-				))
-			}
-		}
+	case common.PushPageMsg:
+		cmds = append(cmds, ui.navPush(msg.Page))
 	case commands.ChallengeStaringMsg:
 		cmds = append(cmds, commands.SpawnContainer(ui.session, ui.ctx, msg))
 	case commands.ChallengeStartedMsg:

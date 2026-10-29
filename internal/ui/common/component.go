@@ -12,3 +12,7 @@ type Page interface {
 	View() string
 	SetSize(width, height int)
 }
+
+type PushPageMsg struct{ Page Page }
+
+func PushPage(p Page) tea.Cmd { return func() tea.Msg { return PushPageMsg{Page: p} } }

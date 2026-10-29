@@ -6,5 +6,6 @@
   "difficulty": 1,
   "releaseDate": "2024-10-09",
   "containerImage": "hacktober2024_challenge_09",
-  "challengeFile": "chall.tar.gz"
+  "challengeFile": "chall.tar.gz",
+  "track": "PWN101"
 }

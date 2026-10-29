@@ -23,10 +23,17 @@ type ChallengeConfig struct {
 	BaseDir string
 }
 
+type TrackConfig struct {
+	Id          string
+	Title       string
+	Description string
+}
+
 type Config struct {
 	SSH       SSHConfig
 	Container ContainerConfig
 	Challenge ChallengeConfig
+	Tracks    []TrackConfig
 }
 
 func NewConfig(c *viper.Viper) *Config {

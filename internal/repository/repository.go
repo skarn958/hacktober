@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+
+	"github.com/secfault-org/hacktober/internal/config"
 )
 
 type Repository interface {
@@ -14,11 +16,12 @@ type datastore struct {
 	*challengeRepo
 }
 
-func NewRepository(ctx context.Context, basedir string) Repository {
+func NewRepository(ctx context.Context, cfg *config.Config) Repository {
 	return &datastore{
 		ctx: ctx,
 		challengeRepo: &challengeRepo{
-			basedir: basedir,
+			basedir: cfg.Challenge.BaseDir,
+			tracks:  cfg.Tracks,
 		},
 	}
 }

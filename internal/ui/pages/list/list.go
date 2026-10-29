@@ -31,9 +31,10 @@ type Page struct {
 	keyMap   KeyMap
 	items    []selector.IdentifiableItem
 	selector *selector.Selector
+	onSelect func(selector.IdentifiableItem) tea.Cmd
 }
 
-func New(scr styles.Themed, title string, items []selector.IdentifiableItem, delegate selector.ItemDelegate) *Page {
+func New(scr styles.Themed, title string, items []selector.IdentifiableItem, delegate selector.ItemDelegate, onSelect func(item selector.IdentifiableItem) tea.Cmd) *Page {
 	km := defaultKeyMap()
 
 	sel := selector.New(
@@ -54,6 +55,7 @@ func New(scr styles.Themed, title string, items []selector.IdentifiableItem, del
 		keyMap:   km,
 		items:    items,
 		selector: sel,
+		onSelect: onSelect,
 	}
 }
 
@@ -65,6 +67,11 @@ func (p *Page) Init() tea.Cmd {
 }
 
 func (p *Page) Update(msg tea.Msg) (common.Page, tea.Cmd) {
+	if sel, ok := msg.(selector.SelectMsg); ok && p.onSelect != nil {
+		if cmd := p.onSelect(sel.IdentifiableItem); cmd != nil {
+			return p, cmd
+		}
+	}
 	s, cmd := p.selector.Update(msg)
 	p.selector = s
 	return p, cmd
