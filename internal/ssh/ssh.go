@@ -13,6 +13,7 @@ import (
 	rm "charm.land/wish/v2/recover"
 	"github.com/secfault-org/hacktober/internal/application"
 	"github.com/secfault-org/hacktober/internal/config"
+	gossh "golang.org/x/crypto/ssh"
 )
 
 type SSHServer struct {
@@ -21,17 +22,21 @@ type SSHServer struct {
 	cfg    *config.Config
 }
 
+type contextKey int
+
+const fingerprintKey contextKey = iota
+
 func (s *SSHServer) PublicKeyHandler(ctx ssh.Context, pk ssh.PublicKey) bool {
 	if pk == nil {
 		return false
 	}
-
-	//user, _ := s.be.UserByPublicKey(ctx, pk)
-	//if user != nil {
-	//	ctx.SetValue(proto.ContextKeyUser, user)
-	//}
-
+	ctx.SetValue(fingerprintKey, gossh.FingerprintSHA256(pk))
 	return true
+}
+
+func fingerprintFrom(ctx ssh.Context) (string, bool) {
+	fp, ok := ctx.Value(fingerprintKey).(string)
+	return fp, ok
 }
 
 func NewSSHServer(ctx context.Context, app *application.App) (*SSHServer, error) {

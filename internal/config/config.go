@@ -29,11 +29,16 @@ type TrackConfig struct {
 	Description string
 }
 
+type DatabaseConfig struct {
+	Path string
+}
+
 type Config struct {
 	SSH       SSHConfig
 	Container ContainerConfig
 	Challenge ChallengeConfig
 	Tracks    []TrackConfig
+	Database  DatabaseConfig
 }
 
 func NewConfig(c *viper.Viper) *Config {

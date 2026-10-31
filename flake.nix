@@ -16,7 +16,7 @@
         pname = "hacktober";
         version = "0.1.0";
         src = ./.;
-        vendorHash = "sha256-LhBbKXYmqY2vurRbYg7kcIlPQXf5V54Q9gccPGubEls=";
+        vendorHash = "sha256-HxjJkRxwxwvCilHwR7ZC6PFKtdoD7rhzH3u8lQGoBUs=";
         nativeBuildInputs = [ pkgs.pkg-config ];
         buildInputs = [ pkgs.gpgme pkgs.btrfs-progs pkgs.lvm2 ];
     };
@@ -38,6 +38,7 @@
             RegistryPrefix = "10.0.0.1:5000";
         };
         challenge.BaseDir = "${challengeData}";
+        database.Path = "/persist/app/hacktober.db";
         tracks = [
             { Id = "PWN101"; Title = "PWN 101"; Description = "Introduction to binary exploitation (stack-based buffer overflows, format-string attacks, ...)"; }
             { Id = "WEB101"; Title = "WEB 101"; Description = "This track will be filled by Mr. B. 🧑‍💻"; }

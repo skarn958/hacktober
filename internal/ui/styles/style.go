@@ -29,6 +29,10 @@ type Styles struct {
 			Desc  lipgloss.Style
 			Count lipgloss.Style
 		}
+		Complete struct {
+			Title lipgloss.Style
+			Count lipgloss.Style
+		}
 	}
 
 	ChallengeListItemContainer lipgloss.Style
@@ -113,6 +117,10 @@ func DefaultStyles() *Styles {
 
 	style.TrackListItem.Active.Count = style.TrackListItem.Normal.Count.
 		Foreground(lipgloss.Color("212"))
+
+	style.TrackListItem.Complete.Count = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("220")).
+		Bold(true)
 
 	style.ChallengeListItemContainer = lipgloss.NewStyle().
 		PaddingLeft(1).

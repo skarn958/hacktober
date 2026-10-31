@@ -94,6 +94,7 @@ func (ui *Ui) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, tea.ClearScreen)
 	case commands.ChallengeSolvedMsg:
 		cmds = append(cmds,
+			commands.RecordSolve(ui.session, ui.ctx, msg),
 			showConfettiCmd(),
 			hideConfettiCmd(2*time.Second),
 			commands.StopChallenge(ui.session, ui.ctx),
@@ -132,6 +133,8 @@ func (ui *Ui) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case commands.ChallengeStoppedMsg:
 		ui.app.Logger().Debugf("Container for %s stopped", msg.Name)
 	case commands.ContainerErrorMsg:
+		ui.app.Logger().Error(msg.Error())
+	case commands.ChallengeSolveErrorMsg:
 		ui.app.Logger().Error(msg.Error())
 	case commands.ChallengeTimedOutMsg:
 		if ui.session.CanStopChallenge() {

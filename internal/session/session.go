@@ -6,15 +6,24 @@ import (
 	"encoding/hex"
 	"errors"
 	"sync"
+	"time"
 
 	"github.com/secfault-org/hacktober/internal/config"
 	"github.com/secfault-org/hacktober/internal/container"
 	"github.com/secfault-org/hacktober/internal/model/challenge"
 	cm "github.com/secfault-org/hacktober/internal/model/container"
+	"github.com/secfault-org/hacktober/internal/model/user"
 )
+
+type SolveStore interface {
+	RecordSolve(ctx context.Context, fingerprint, challengeID string) (time.Time, error)
+}
 
 type Session struct {
 	mu               sync.Mutex
+	user             user.User
+	solved           map[string]time.Time
+	store            SolveStore
 	active           *challenge.ActiveChallenge
 	containerService container.Service
 	cfg              *config.Config
@@ -22,11 +31,30 @@ type Session struct {
 
 var ErrStartCancelled = errors.New("challenge start cancelled")
 
-func New(service container.Service, cfg *config.Config) *Session {
+func New(
+	service container.Service,
+	cfg *config.Config,
+	u user.User,
+	solved map[string]time.Time,
+	store SolveStore,
+) *Session {
+	if solved == nil {
+		solved = map[string]time.Time{}
+	}
+
 	return &Session{
+		user:             u,
+		solved:           solved,
+		store:            store,
 		containerService: service,
 		cfg:              cfg,
 	}
+}
+
+func (s *Session) User() user.User {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.user
 }
 
 func (s *Session) ActiveChallenge() *challenge.ActiveChallenge {
@@ -108,22 +136,34 @@ func (s *Session) CheckFlag(flag string) bool {
 	return s.active != nil && flag == s.active.Flag
 }
 
-//func (s *Session) IsSolved(challengeID string) bool {
-//	s.mu.Lock()
-//	defer s.mu.Unlock()
-//	_, ok := s.solved[challengeID]
-//	return ok
-//}
-//
-//func (s *Session) MarkSolved(ctx context.Context, challengeID string) error {
-//	if err := s.app.Users().RecordSolve(ctx, s.User.Fingerprint, challengeID); err != nil {
-//		return err
-//	}
-//	s.mu.Lock()
-//	s.solved[challengeID] = time.Now()
-//	s.mu.Unlock()
-//	return nil
-//}
+func (s *Session) IsSolved(challengeID string) bool {
+	_, ok := s.SolvedAt(challengeID)
+	return ok
+}
+
+func (s *Session) SolvedAt(challengeID string) (time.Time, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	t, ok := s.solved[challengeID]
+	return t, ok
+}
+
+func (s *Session) Solve(ctx context.Context, challengeID string) error {
+	s.mu.Lock()
+	fp := s.user.Fingerprint
+	s.mu.Unlock()
+
+	solvedAt, err := s.store.RecordSolve(ctx, fp, challengeID)
+	if err != nil {
+		return err
+	}
+
+	s.mu.Lock()
+	s.solved[challengeID] = solvedAt
+	s.mu.Unlock()
+
+	return nil
+}
 
 func newFlag() (string, error) {
 	b := make([]byte, 16)

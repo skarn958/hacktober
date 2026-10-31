@@ -1,3 +1,6 @@
 /.idea
 /.ssh
 /hacktober
+/hacktober.db
+/hacktober.db-wal
+/hacktober.db-shm

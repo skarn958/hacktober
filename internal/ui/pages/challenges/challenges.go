@@ -19,11 +19,12 @@ func New(scr styles.Themed, sess *session.Session, track string, challs []challe
 		items[i] = Item{Challenge: &challs[i]}
 	}
 
-	return list.New(scr, fmt.Sprintf("%s Challenges", track), items, NewItemDelegate(scr), func(it selector.IdentifiableItem) tea.Cmd {
-		c := it.(Item)
-		if c.Challenge.Locked() {
-			return nil
-		}
-		return common.PushPage(challenge_detail.New(scr, sess, c.Challenge))
-	})
+	return list.New(scr, fmt.Sprintf("%s Challenges", track), items, NewItemDelegate(scr, sess),
+		func(it selector.IdentifiableItem) tea.Cmd {
+			c := it.(Item)
+			if c.Challenge.Locked() {
+				return nil
+			}
+			return common.PushPage(challenge_detail.New(scr, sess, c.Challenge))
+		})
 }

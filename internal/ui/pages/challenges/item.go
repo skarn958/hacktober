@@ -10,6 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/secfault-org/hacktober/internal/model/challenge"
+	"github.com/secfault-org/hacktober/internal/session"
 	"github.com/secfault-org/hacktober/internal/ui/styles"
 )
 
@@ -23,12 +24,14 @@ func (i Item) Description() string { return i.Challenge.Description }
 func (i Item) FilterValue() string { return i.Challenge.Name }
 
 type ItemDelegate struct {
-	screen styles.Themed
+	screen  styles.Themed
+	session *session.Session
 }
 
-func NewItemDelegate(scr styles.Themed) *ItemDelegate {
+func NewItemDelegate(scr styles.Themed, sess *session.Session) *ItemDelegate {
 	return &ItemDelegate{
-		screen: scr,
+		screen:  scr,
+		session: sess,
 	}
 }
 
@@ -57,6 +60,10 @@ func (d ItemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	title := item.Title()
 	if item.Challenge.Locked() {
 		title += " 🔒"
+	}
+
+	if d.session.IsSolved(item.ID()) {
+		title += " ✅"
 	}
 
 	releaseStr := fmt.Sprintf(" Release: %s", item.Challenge.ReleaseDate.Format(time.DateOnly))

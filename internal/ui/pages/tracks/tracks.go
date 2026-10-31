@@ -18,7 +18,7 @@ func New(scr styles.Themed, sess *session.Session, tracks []track.Track) common.
 		items[i] = Item{Track: &tracks[i]}
 	}
 
-	return list.New(scr, "Tracks", items, NewItemDelegate(scr),
+	return list.New(scr, "Tracks", items, NewItemDelegate(scr, sess),
 		func(item selector.IdentifiableItem) tea.Cmd {
 			t := item.(Item)
 			return common.PushPage(challenges.New(scr, sess, t.Track.Title, t.Track.Challenges))

@@ -22,6 +22,7 @@ type FlagEnteredMsg struct {
 type EnteringFlagCanceledMsg struct{}
 
 type ChallengeSolvedMsg *challenge.Challenge
+type ChallengeSolveErrorMsg error
 type WrongFlagMsg struct{}
 
 func EnteringFlagCmd() tea.Msg {
@@ -49,6 +50,15 @@ func SubmitFlag(sess *session.Session, flag string) tea.Cmd {
 		}
 
 		return ChallengeSolvedMsg(active.Challenge)
+	}
+}
+
+func RecordSolve(sess *session.Session, ctx context.Context, ch *challenge.Challenge) tea.Cmd {
+	return func() tea.Msg {
+		if err := sess.Solve(ctx, ch.Id); err != nil {
+			return ChallengeSolveErrorMsg(err)
+		}
+		return nil
 	}
 }
 

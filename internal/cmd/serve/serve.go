@@ -13,6 +13,7 @@ import (
 	"github.com/secfault-org/hacktober/internal/application"
 	"github.com/secfault-org/hacktober/internal/config"
 	"github.com/secfault-org/hacktober/internal/container/podman"
+	"github.com/secfault-org/hacktober/internal/db"
 	"github.com/secfault-org/hacktober/internal/repository"
 	"github.com/secfault-org/hacktober/internal/ssh"
 	"github.com/spf13/cobra"
@@ -37,7 +38,14 @@ var (
 				return err
 			}
 
-			repo := repository.NewRepository(ctx, cfg)
+			database, err := db.Open(cfg.Database.Path)
+			if err != nil {
+				l.Error("Could not open database", "error", err)
+				return err
+			}
+			defer func() { _ = database.Close() }()
+
+			repo := repository.NewRepository(ctx, cfg, database)
 
 			app := application.NewApp(cfg, repo, containerService, logger)
 

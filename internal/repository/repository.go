@@ -3,25 +3,26 @@ package repository
 import (
 	"context"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/secfault-org/hacktober/internal/config"
 )
 
 type Repository interface {
 	ChallengeRepository
+	UserRepository
 }
 
 type datastore struct {
-	ctx context.Context
-
 	*challengeRepo
+	*userRepo
 }
 
-func NewRepository(ctx context.Context, cfg *config.Config) Repository {
+func NewRepository(_ context.Context, cfg *config.Config, db *sqlx.DB) Repository {
 	return &datastore{
-		ctx: ctx,
 		challengeRepo: &challengeRepo{
 			basedir: cfg.Challenge.BaseDir,
 			tracks:  cfg.Tracks,
 		},
+		userRepo: &userRepo{db: db},
 	}
 }

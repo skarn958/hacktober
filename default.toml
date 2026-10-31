@@ -11,6 +11,9 @@ TimeoutInMinutes = 30
 [challenge]
 BaseDir = "challenges"
 
+[database]
+Path = "hacktober.db"
+
 [[tracks]]
 Id = "PWN101"
 Title = "PWN 101"

@@ -10,6 +10,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"charm.land/log/v2"
 	"github.com/secfault-org/hacktober/internal/model/track"
+	"github.com/secfault-org/hacktober/internal/session"
 	"github.com/secfault-org/hacktober/internal/ui/styles"
 )
 
@@ -22,20 +23,31 @@ func (i Item) Title() string       { return i.Track.Title }
 func (i Item) Description() string { return i.Track.Description }
 func (i Item) FilterValue() string { return i.Track.Title }
 
-func (i Item) challengeCount() string {
-	n := len(i.Track.Challenges)
-	if n == 1 {
-		return "1 Challenge"
+func (i Item) challengeCount(solved, total int) string {
+	noun := "Challenges"
+	if total == 1 {
+		noun = "Challenge"
 	}
-	return fmt.Sprintf("%d Challenges", n)
+	return fmt.Sprintf("%d/%d %s", solved, total, noun)
 }
 
 type ItemDelegate struct {
-	screen styles.Themed
+	screen  styles.Themed
+	session *session.Session
 }
 
-func NewItemDelegate(screen styles.Themed) *ItemDelegate {
-	return &ItemDelegate{screen}
+func NewItemDelegate(screen styles.Themed, sess *session.Session) *ItemDelegate {
+	return &ItemDelegate{screen, sess}
+}
+
+func (d ItemDelegate) progress(t *track.Track) (solved, total int) {
+	total = len(t.Challenges)
+	for i := range t.Challenges {
+		if d.session.IsSolved(t.Challenges[i].Id) {
+			solved++
+		}
+	}
+	return
 }
 
 func (d ItemDelegate) Render(w io.Writer, m list.Model, index int, item list.Item) {
@@ -49,12 +61,21 @@ func (d ItemDelegate) Render(w io.Writer, m list.Model, index int, item list.Ite
 		itemStyle = d.screen.Theme().TrackListItem.Active
 	}
 
+	solved, total := d.progress(listItem.Track)
+	complete := total > 0 && solved == total
+
 	title := listItem.Title()
-	countStr := listItem.challengeCount()
+	countStr := listItem.challengeCount(solved, total)
+	countStyle := itemStyle.Count
+	if complete {
+		countStr += " 🏆"
+		countStyle = d.screen.Theme().TrackListItem.Complete.Count
+	}
+
 	if m.Width()-itemStyle.Base.GetHorizontalFrameSize()-lipgloss.Width(countStr) <= 0 {
 		countStr = ""
 	}
-	countStyle := itemStyle.Count.
+	countStyle = countStyle.
 		Align(lipgloss.Right).
 		Width(m.Width() - itemStyle.Base.GetHorizontalFrameSize() - lipgloss.Width(title))
 
