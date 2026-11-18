@@ -1,23 +1,23 @@
 TARGET_NAME=chall
-DOCKER_NAME=hacktober2024_challenge_01
-SRCS=chall.c
+DOCKER_NAME=hacktober_web_challenge_01
+SRCS=main.go
 
-CC=gcc
-CFLAGS=-Wall -Wextra -Werror -Wno-deprecated-declarations -O0 -std=c99 -pedantic -fno-strict-aliasing -fno-omit-frame-pointer -fno-stack-protector -fno-stack-check -fno-pie -no-pie -z execstack
-LDFLAGS=-no-pie -z execstack
+GO=go
 
-all: $(TARGET_NAME)
+all: build
+
+build: $(TARGET_NAME)
 
 $(TARGET_NAME): $(SRCS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+	CGO_ENABLED=0 $(GO) build -o $@ $(SRCS)
 
-run: $(TARGET_NAME)
+run:
 	FLAG=this_is_only_a_test_flag ./$(TARGET_NAME)
 
-archive: $(TARGET_NAME)
-	tar -czvf $(TARGET_NAME).tar.gz $(SRCS) $(TARGET_NAME) Makefile
+archive:
+	tar -czvf $(TARGET_NAME).tar.gz $(SRCS) Dockerfile Makefile
 
-dockerfile: $(TARGET_NAME)
+dockerfile:
 	podman build -t $(DOCKER_NAME) .
 
 clean:

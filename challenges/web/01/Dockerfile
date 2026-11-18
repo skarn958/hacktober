@@ -1,5 +1,11 @@
-FROM localhost/hacktober_base
+FROM golang:1.27-alpine
 
-COPY chall /chall
+WORKDIR /app
 
-CMD ["-p", "1337", "-b", "/chall", "-a", "x86_64"]
+COPY main.go .
+
+RUN CGO_ENABLED=0 go build -o chall main.go
+
+EXPOSE 1337
+
+CMD ["./chall"]

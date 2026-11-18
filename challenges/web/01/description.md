@@ -14,7 +14,7 @@ Dieser Link beschreibt wie der Browser geöffnet werden kann: https://portswigge
 Um die Challenge zu starten einfach innerhalb der Challenge (also hier) ctrl+r drücken. Daraufhin wird die Challenge
 gestartet und ist über das Netzwerk erreichbar. Der Port wird unten in der Statusleiste angezeigt.
 
-  http://hacktober.secfault.org <port>
+  https://hacktober.secfault.org <port>
 
 Wenn die Challenge gelöst wurde, kann die Flag mit ctrl+f eingereicht werden.
 
